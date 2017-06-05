@@ -1,0 +1,5 @@
+default['tomcat']['username'] = 'tomcat'
+default['tomcat']['group'] = 'tomcat'
+default['tomcat']['Xms'] = '512M'
+default['tomcat']['Xmx'] = '1024M'
+default['tomcat']['version'] = '8.0.44'

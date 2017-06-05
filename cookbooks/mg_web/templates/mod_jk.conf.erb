@@ -1,0 +1,11 @@
+JkWorkersFile /etc/httpd/module.conf/workers.properties
+JkLogFile /var/log/httpd/mod_jk.log
+#
+# Log Level: May be debug, info, error, or emerg.
+# If not set, defaults to no log
+#
+JkLogLevel error
+#
+# Root context mounts for Tomcat
+#
+JkMount /*.jsp ajp13

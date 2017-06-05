@@ -1,0 +1,27 @@
+worker.list=ajp13
+#
+#------ DEFAULT ajp13 WORKER DEFINITION ------------------------------
+#---------------------------------------------------------------------
+#
+# Defining a worker named ajp13 and of type ajp13
+# Note that the name and the type do not have to match.
+#
+worker.ajp13.port=8009
+worker.ajp13.host=<%= node['tomcat']['host'] %>
+worker.ajp13.type=ajp13
+#
+# Specifies the load balance factor when used with
+# a load balancing worker.
+# Note:
+#  ----> lbfactor must be > 0
+#  ----> Low lbfactor means less work done by the worker.
+worker.ajp13.lbfactor=1
+#
+#------ DEFAULT JNI WORKER DEFINITION---------------------------------
+#---------------------------------------------------------------------
+#
+# Defining a worker named inprocess and of type jni
+# Note that the name and the type do not have to match.
+#
+worker.inprocess.type=jni
+
