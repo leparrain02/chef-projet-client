@@ -1,0 +1,13 @@
+<Context>
+  <Resource name="jdbc/customer"
+            auth="Container"
+            type="javax.sql.DataSource"
+            driverClassName="com.mysql.jdbc.Driver"
+            username="<%= @dbusername %>"
+            password="<%= @dbpassword %>"
+            url="jdbc:mysql://<%= @dbserver %>:<%= @dbport %>/<%= @dbname %>"
+            maxActive="5"
+            maxIdle="30" maxWait="10000" />
+
+</Context>
+

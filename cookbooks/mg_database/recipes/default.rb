@@ -4,6 +4,8 @@
 #
 # Copyright:: 2017, The Authors, All Rights Reserved.
 
+conninfo = data_bag_item('passwords', 'mysql')
+
 rpm_file = ::File.join(Chef::Config[:file_cache_path], 'mysql57-community-release-el7-11.noarch.rpm')
 init_script = ::File.join(Chef::Config[:file_cache_path], 'init_script.sql')
 
@@ -20,17 +22,12 @@ cookbook_file '/etc/yum.repos.d/mysql-community.repo' do
   source 'mysql-community.repo'
 end
 
-# Configure the MySQL service.
-#mysql_service 'default' do
-#  initial_root_password 'qwerty'
-#  action [:create, :start]
-#end
-
 template init_script do
   source 'init_script.sql.erb'
   owner 'root'
   group 'root'
   mode  '0644'
+  variables(:dbpassword => conninfo['root_password'])
 end
 
 execute 'mysql_init' do
@@ -55,7 +52,7 @@ end
 mysql_connection_info = {
   host: '127.0.0.1',
   username: 'root',
-  password: node['mysql']['root']['password']
+  password: conninfo['root_password']
 }
 
 # Create the database instance.
@@ -65,20 +62,20 @@ mysql_database node['mysql']['database']['dbname'] do
 end
 
 # Add a database user.
-mysql_database_user node['mysql']['admin']['username'] do
+mysql_database_user conninfo['admin_user'] do
   connection mysql_connection_info
-  password node['mysql']['admin']['password']
+  password conninfo['admin_password']
   database_name node['mysql']['database']['dbname']
   host 'localhost'
   action [:create, :grant]
 end
 
 # Add a database user.
-mysql_database_user node['mysql']['admin']['username'] do
+mysql_database_user conninfo['admin_user'] do
   connection mysql_connection_info
-  password node['mysql']['admin']['password']
+  password conninfo['admin_password']
   database_name node['mysql']['database']['dbname']
-  host '192.168.34.37'
+  host node['tomcat-node1-marc']['ipaddress']
   action [:create, :grant]
 end
 
