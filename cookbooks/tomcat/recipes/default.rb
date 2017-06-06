@@ -4,7 +4,7 @@
 #
 # Copyright:: 2017, The Authors, All Rights Reserved.
 
-tomcat_version='8.0.44'
+conninfo = data_bag_item('passwords', 'mysql')
 
 package 'java-1.7.0-openjdk-devel' do
 end
@@ -21,17 +21,14 @@ end
 directory '/opt/tomcat' do
 end
 
-tar_extract "http://apache.mirror.colo-serv.net/tomcat/tomcat-8/v#{tomcat_version}/bin/apache-tomcat-#{tomcat_version}.tar.gz" do
+tar_extract "http://apache.mirror.colo-serv.net/tomcat/tomcat-8/v#{node['tomcat']['version']}/bin/apache-tomcat-#{node['tomcat']['version']}.tar.gz" do
   target_dir '/opt/tomcat'
-  creates "/opt/tomcat/apache-tomcat-#{tomcat_version}/lib"
+  creates "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/lib"
 end
 
-template "/opt/tomcat/apache-tomcat-#{tomcat_version}/conf/server.xml" do
-  source 'server.xml.erb'
-end
 
 fileutils 'conf' do
-  path "/opt/tomcat/apache-tomcat-#{tomcat_version}"
+  path "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}"
   group node['tomcat']['group']
   file_mode 'g+r'
   directory_mode 'g+rwx'
@@ -39,8 +36,8 @@ fileutils 'conf' do
   not_if "stat -c '%G' conf|grep '^ *tomcat *$'"
 end
 
-cookbook_file "/opt/tomcat/apache-tomcat-#{tomcat_version}/lib/mysql-connector-java-5.0.8-bin.jar" do
-  source 'mysql-connector-java-5.0.8-bin.jar'
+cookbook_file "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/lib/mysql-connector-java-5.1.42-bin.jar" do
+  source 'mysql-connector-java-5.1.42-bin.jar'
   user 'tomcat'
   group 'tomcat'
   mode '0644'
@@ -48,7 +45,7 @@ end
 
 %w( webapps work temp logs).each do |repertoire|
   fileutils "#{repertoire}" do
-    path "/opt/tomcat/apache-tomcat-#{tomcat_version}"
+    path "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}"
     owner node['tomcat']['username']
     recursive true
     not_if "stat -c '%U' #{repertoire}|grep '^ *tomcat *$'"
@@ -72,41 +69,38 @@ service 'tomcat' do
   action [:enable, :start]
 end
 
-#directory "/opt/tomcat/apache-tomcat-#{tomcat_version}/webapps/customer" do
-#  owner 'tomcat'
-#  group 'tomcat'
-#  mode  '0755'
-#end
+template "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/conf/server.xml" do
+  source 'server.xml.erb'
+  notifies :restart, 'service[tomcat]', :immediate
+end
 
-#directory "/opt/tomcat/apache-tomcat-#{tomcat_version}/webapps/customer/lib" do
-#  owner 'tomcat'
-#  group 'tomcat'
-#  mode  '0755'
-#end
+workdir = ::File.join(Chef::Config[:file_cache_path], 'webapps')
+wardir = "#{workdir}/#{node['tomcat']['servicename']}"
 
-#directory "/opt/tomcat/apache-tomcat-#{tomcat_version}/webapps/customer/WEB-INF" do
-#  owner 'tomcat'
-#  group 'tomcat'
-#  mode  '0755'
-#end
+directory wardir do
+  recursive true
+end
 
-#cookbook_file "/opt/tomcat/apache-tomcat-#{tomcat_version}/webapps/customer/lib/standard.jar" do
-#  source 'standard.jar'
-#  owner 'tomcat'
-#  group 'tomcat'
-#  mode '0644'
-#end
+cookbook_file "#{workdir}/#{node['tomcat']['servicename']}.war" do
+  source "#{node['tomcat']['servicename']}.war"
+end
 
-#cookbook_file "/opt/tomcat/apache-tomcat-#{tomcat_version}/webapps/customer/lib/jstl.jar" do
-#  source 'jstl.jar'
-#  owner 'tomcat'
-#  group 'tomcat'
-#  mode '0644'
-#end
+execute 'expand_service' do
+  command "jar xf ../#{node['tomcat']['servicename']}.war"
+  cwd wardir
+end
 
-cookbook_file "/opt/tomcat/apache-tomcat-#{tomcat_version}/webapps/customer.war" do
-  source "customer.war"
-  owner 'tomcat'
-  group 'tomcat'
-  mode '644'
+template "#{wardir}/META-INF/context.xml" do
+  source 'context.xml.erb'
+  variables(:dbusername => conninfo['admin_user'],
+       :dbpassword => conninfo['admin_password'],
+       :dbserver => node['database']['server'],
+       :dbport   => node['database']['port'],
+       :dbname   => node['database']['dbname']
+  )
+end
+
+execute 'create_jar' do
+  command "jar cf /opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/webapps/#{node['tomcat']['servicename']}.war *" 
+  cwd wardir
 end

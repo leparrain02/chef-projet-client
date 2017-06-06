@@ -29,6 +29,7 @@ template '/etc/httpd-default/conf.modules.d/jk.conf' do
   owner 'root'
   group 'root'
   mode  '0644'
+  variables(:servicename => node['tomcat']['servicename'])
 end
 
 template '/etc/httpd-default/conf.modules.d/workers.properties' do
