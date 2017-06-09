@@ -27,29 +27,33 @@ tar_extract "http://apache.mirror.colo-serv.net/tomcat/tomcat-8/v#{node['tomcat'
 end
 
 
-fileutils 'conf' do
-  path "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}"
+fileutils "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/conf" do
   group node['tomcat']['group']
   file_mode 'g+r'
-  directory_mode 'g+rwx'
+  directory_mode 'g+rx'
   recursive true
-  not_if "stat -c '%G' conf|grep '^ *tomcat *$'"
+  not_if "stat -c '%G' /opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/conf|grep '^ *tomcat *$'"
 end
 
 cookbook_file "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/lib/mysql-connector-java-5.1.42-bin.jar" do
   source 'mysql-connector-java-5.1.42-bin.jar'
-  user 'tomcat'
+  user 'root'
   group 'tomcat'
-  mode '0644'
+  mode '0640'
 end
 
 %w( webapps work temp logs).each do |repertoire|
-  fileutils "#{repertoire}" do
-    path "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}"
+  fileutils "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/#{repertoire}" do
     owner node['tomcat']['username']
     recursive true
-    not_if "stat -c '%U' #{repertoire}|grep '^ *tomcat *$'"
+    not_if "stat -c '%U' /opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/#{repertoire}|grep '^ *tomcat *$'"
   end
+end
+
+fileutils "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}" do
+  group node['tomcat']['group']
+  recursive true
+  not_if "stat -c '%G' /opt/tomcat/apache-tomcat-#{node['tomcat']['version']}|grep '^ *tomcat *$'"
 end
 
 execute 'daemon-reload' do
@@ -90,11 +94,20 @@ execute 'expand_service' do
   cwd wardir
 end
 
+
+dbservers=search(:node,'role:database',:filter_result => { 'IP' => ['ipaddress']})
+
+if defined?(dbservers) && !dbservers.empty? then
+  dbserver=dbservers[0]['IP']
+else
+  dbserver=node['database']['server']
+end
+
 template "#{wardir}/META-INF/context.xml" do
   source 'context.xml.erb'
   variables(:dbusername => conninfo['admin_user'],
        :dbpassword => conninfo['admin_password'],
-       :dbserver => node['database']['server'],
+       :dbserver => dbserver,
        :dbport   => node['database']['port'],
        :dbname   => node['database']['dbname']
   )
@@ -104,3 +117,8 @@ execute 'create_jar' do
   command "jar cf /opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/webapps/#{node['tomcat']['servicename']}.war *" 
   cwd wardir
 end
+
+service 'firewalld' do
+  action [:disable, :stop]
+end
+

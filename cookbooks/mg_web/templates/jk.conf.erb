@@ -1,8 +1,8 @@
 #
 # Configure the jk module
 #
-JkWorkersFile /etc/httpd-default/conf.modules.d/workers.properties
-JkLogFile /var/log/httpd-default/mod_jk.log
+JkWorkersFile conf.modules.d/workers.properties
+JkLogFile logs/mod_jk.log
 #
 # Log Level: May be debug, info, error, or emerg.
 # If not set, defaults to no log
@@ -11,5 +11,14 @@ JkLogLevel error
 #
 # Root context mounts for Tomcat
 #
-JkMount /*.jsp ajp13
-JkMount /<%= @servicename %>/* ajp13
+JkMount /<%= @servicename %>/* loadbalancer
+
+JkShmFile logs/jk.shm 
+              
+# Add jkstatus for managing runtime data
+<Location /jkstatus/>
+    JkMount status
+    Order deny,allow
+    Deny from all
+    Allow from 127.0.0.1
+</Location>

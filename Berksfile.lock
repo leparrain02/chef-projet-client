@@ -1,8 +1,9 @@
 DEPENDENCIES
   database (~> 6.1)
+  fileutils (~> 1.1.4)
   httpd (~> 0.4)
-  mysql (~> 8.0)
   mysql2_chef_gem (~> 2.0)
+  tar (~> 2.1.0)
 
 GRAPH
   apt (6.1.0)
@@ -12,6 +13,7 @@ GRAPH
   compat_resource (12.19.0)
   database (6.1.1)
     postgresql (>= 1.0.0)
+  fileutils (1.1.4)
   httpd (0.4.5)
     compat_resource (>= 12.16.3)
   inifile_chef_gem (0.1.0)
@@ -40,6 +42,7 @@ GRAPH
     compat_resource (>= 12.16.3)
   seven_zip (2.0.2)
     windows (>= 1.2.2)
+  tar (2.1.0)
   windows (3.1.0)
     ohai (>= 4.0.0)
   yum (5.0.1)
