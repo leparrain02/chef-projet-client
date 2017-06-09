@@ -94,11 +94,20 @@ execute 'expand_service' do
   cwd wardir
 end
 
+
+dbservers=search(:node,'role:database',:filter_result => { 'IP' => ['ipaddress']})
+
+if defined?(dbservers) && !dbservers.empty? then
+  dbserver=dbservers[0]['IP']
+else
+  dbserver=node['database']['server']
+end
+
 template "#{wardir}/META-INF/context.xml" do
   source 'context.xml.erb'
   variables(:dbusername => conninfo['admin_user'],
        :dbpassword => conninfo['admin_password'],
-       :dbserver => node['database']['server'],
+       :dbserver => dbserver,
        :dbport   => node['database']['port'],
        :dbname   => node['database']['dbname']
   )
@@ -108,3 +117,8 @@ execute 'create_jar' do
   command "jar cf /opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/webapps/#{node['tomcat']['servicename']}.war *" 
   cwd wardir
 end
+
+service 'firewalld' do
+  action [:disable, :stop]
+end
+

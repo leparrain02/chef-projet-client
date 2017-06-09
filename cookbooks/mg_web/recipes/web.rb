@@ -32,11 +32,24 @@ template '/etc/httpd-default/conf.modules.d/jk.conf' do
   variables(:servicename => node['tomcat']['servicename'])
 end
 
+apps={};
+appservers=search(:node,'role:app',:filter_result => { 'IP' => ['ipaddress']})
+if(!appservers.empty?) then
+  appservers.each_index do |index|
+    apps["node#{index+1}"] = appservers[index]['IP']
+  end
+  puts "Node list est: " + apps.keys.join(",")
+else
+  apps["node1"] = node['tomcat']['host']
+end
+
 template '/etc/httpd-default/conf.modules.d/workers.properties' do
   source 'workers.properties.erb'
   owner 'root'
   group 'root'
   mode  '0644'
+  variables({:appservers => apps,
+             :nodelist   => apps.keys.join(", ") })
 end
 
 # Add the site configuration.
@@ -48,3 +61,9 @@ end
 service 'httpd-default' do
   action :restart
 end
+
+
+service 'firewalld' do
+  action [:disable, :stop]
+end
+

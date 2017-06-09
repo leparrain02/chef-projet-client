@@ -71,12 +71,29 @@ mysql_database_user conninfo['admin_user'] do
 end
 
 # Add a database user.
-mysql_database_user conninfo['admin_user'] do
-  connection mysql_connection_info
-  password conninfo['admin_password']
-  database_name node['mysql']['database']['dbname']
-  host node['tomcat-node1-marc']['ipaddress']
-  action [:create, :grant]
+appservers=search(:node,'role:app',:filter_result => { 'IP' => ['ipaddress']})
+if(!appservers.empty?) then
+  appservers.each do |appserver|
+    mysql_database_user conninfo['admin_user'] do
+      connection mysql_connection_info
+      password conninfo['admin_password']
+      database_name node['mysql']['database']['dbname']
+      host appserver['IP']
+      action [:create, :grant]
+    end
+  end
+else
+  mysql_database_user conninfo['admin_user'] do
+    connection mysql_connection_info
+    password conninfo['admin_password']
+    database_name node['mysql']['database']['dbname']
+    host node['tomcat-node1-marc']['ipaddress']
+    action [:create, :grant]
+  end
+end
+
+service 'firewalld' do
+  action [:disable, :stop]
 end
 
 include_recipe 'mg_database::database_insert_data'

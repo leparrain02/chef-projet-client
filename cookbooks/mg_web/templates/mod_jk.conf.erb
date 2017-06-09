@@ -8,5 +8,18 @@ JkLogLevel error
 #
 # Root context mounts for Tomcat
 #
-JkMount /*.jsp ajp13
-JkMount /<%= @servicename %>/* ajp13
+JkMount /<%= @servicename %>/* loadbalancer
+
+# Add shared memory.
+# This directive is present with 1.2.10 and
+# later versions of mod_jk, and is needed for
+# for load balancing to work properly
+JkShmFile logs/jk.shm 
+              
+# Add jkstatus for managing runtime data
+<Location /jkstatus/>
+    JkMount status
+    Order deny,allow
+    Deny from all
+    Allow from 127.0.0.1
+</Location>
