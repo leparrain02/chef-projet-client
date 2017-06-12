@@ -15,4 +15,18 @@ template '/etc/sysconfig/selinux' do
   notifies :run, 'execute[disable_selinux]', :immediate
 end
 
+firewall 'default' do
+  action :install
+end
+
+firewall_rule 'ssh' do
+  port 22
+  command :allow
+end
+
 include_recipe 'mg_web::web'
+
+firewall_rule 'http' do
+  port 80
+  command :allow
+end

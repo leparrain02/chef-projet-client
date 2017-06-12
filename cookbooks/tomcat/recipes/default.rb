@@ -6,6 +6,15 @@
 
 conninfo = data_bag_item('passwords', 'mysql')
 
+firewall 'default' do
+  action :install
+end
+
+firewall_rule 'ssh' do
+  port 22
+  command :allow
+end
+
 package 'java-1.7.0-openjdk-devel' do
 end
 
@@ -73,8 +82,15 @@ service 'tomcat' do
   action [:enable, :start]
 end
 
+if node['kitchen'] then 
+  nodename = 'node1'
+else
+  nodename = node['name']
+end
+
 template "/opt/tomcat/apache-tomcat-#{node['tomcat']['version']}/conf/server.xml" do
   source 'server.xml.erb'
+  variables(:workername => nodename)
   notifies :restart, 'service[tomcat]', :immediate
 end
 
@@ -118,7 +134,16 @@ execute 'create_jar' do
   cwd wardir
 end
 
-service 'firewalld' do
-  action [:disable, :stop]
+webservers=search(:node,'role:web',:filter_result => { 'IP' => ['ipaddress']})
+
+if defined?(webservers) && !webservers.empty? then
+  webserver=webservers[0]['IP']
+else
+  webserver=node['web']['server']
 end
 
+firewall_rule 'webserver' do
+  port 8009
+  source webserver
+  command :allow
+end

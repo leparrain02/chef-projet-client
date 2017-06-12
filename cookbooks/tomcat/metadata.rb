@@ -21,3 +21,4 @@ chef_version '>= 12.1' if respond_to?(:chef_version)
 
 depends 'tar', '~> 2.1.0'
 depends 'fileutils', '~> 1.1.4'
+depends 'firewall', '~> 2.6.2'

@@ -7,3 +7,6 @@ default['database']['server'] = '192.168.34.38'
 default['database']['port'] = '3306'
 default['database']['dbname'] = 'customer'
 default['tomcat']['servicename'] = 'customer'
+default['web']['server'] = '192.168.34.39'
+
+default['firewall']['firewalld']['permanent'] = true
